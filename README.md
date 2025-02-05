@@ -1,6 +1,6 @@
 # StockMind 📈  
 
-**StockMind** is a **real-time stock analysis** tool that identifies **peer competitors** for a company and fetches its **live stock prices**.  
+**StockMind** is a **Stock peer competitor and Stock Analysis** tool that identifies **peer competitors** for a company and fetches its **live stock prices**.  
 
 ## 🚀 Features  
 ✅ **Competitor Analysis** – Uses **Gemini LLM** to find peer competitors based on the company's industry.  
@@ -20,7 +20,7 @@
 
 1️⃣ **Clone the repository**  
 ```bash
-git clone https://github.com/yourusername/StockMind.git
+git clone https://github.com/sharathchandra-patil/StockMind.git
 cd StockMind
 ```  
 
@@ -49,12 +49,7 @@ Company: Apple Inc. (AAPL)
 Industry: Technology  
 Peer Competitors: Microsoft, Google, Amazon  
 Current Stock Price: $180.32  
-```  
-
-## 📌 To-Do List  
-- [ ] Expand support to **international markets**  
-- [ ] Add **sentiment analysis** for stock trends  
-- [ ] Build a **web interface** for better usability  
+```   
 
 ## 🤝 Contributing  
 Contributions are welcome! Feel free to fork the repo and submit a pull request.  
