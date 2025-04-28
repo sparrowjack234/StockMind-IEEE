@@ -75,6 +75,35 @@ Current Stock Price: $180.32
 Contributions are welcome! Feel free to fork the repo and submit a pull request.
 
 ---
+## 🙋‍♂️ How to Contribute
+
+We welcome contributions from everyone! 🚀
+
+If you're new to open-source, you can start with our [Good First Issues](https://github.com/sharathchandra-patil/StockMind/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
+### 🛠 Steps to Contribute:
+1. Fork this repository.
+2. Clone your forked repo locally.
+3. Create a new branch for your feature or fix.
+4. Make your changes.
+5. Test your changes locally.
+6. Commit your changes with a clear message.
+7. Push your branch and open a Pull Request (PR) to the `main` branch.
+8. Wait for review and feedback!
+
+### 💬 Contribution Ideas:
+- Solve an open [Good First Issue](https://github.com/sharathchandra-patil/StockMind/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+- Fix bugs
+- Improve project documentation
+- Add new features (Check open [Feature Requests](https://github.com/sharathchandra-patil/StockMind/issues?q=is%3Aissue+label%3Afeature))
+- Optimize performance or UI
+
+
+
+📢 **Need help?**  
+Open a [Discussion](https://github.com/sharathchandra-patil/StockMind/discussions) or raise an Issue! We're happy to assist you.
+
+---
 
 ## 🛠️ Contribution Guidelines
 
