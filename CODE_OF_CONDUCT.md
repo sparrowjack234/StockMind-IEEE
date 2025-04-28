@@ -40,7 +40,7 @@ This Code of Conduct applies within all project spaces (GitHub repo, discussions
 
 ## 🌟 Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers via [email@example.com] (replace with your preferred contact email).
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers via [sharathchandra9204@gmail.com].
 
 All complaints will be reviewed and investigated promptly and fairly.
 
