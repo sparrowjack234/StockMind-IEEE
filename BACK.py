@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 import os 
 
 # Load API keys 
-GEMINI_API_KEY="AIzaSyDCGf6T3GlijotnC4gv9s36ZNHkBBKTBrQ" 
-ALPHA_VANTAGE_API_KEY="JTPZF6JUQYTU18C3" 
+GEMINI_API_KEY="abc" #GeminiAPIKey 
+ALPHA_VANTAGE_API_KEY="xyz"#AlphaVantageAPIKey 
 client = genai.Client(api_key=GEMINI_API_KEY) 
 app = Flask(__name__, static_folder="static", template_folder="templates") 
 
