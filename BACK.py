@@ -13,6 +13,28 @@ import os
 import secrets
 import re
 
+from alert_system.scheduler import start_scheduler, alerts
+@app.route('/alert_form')
+def alert_form():
+    return render_template('alert_form.html')
+@app.route('/alerts')
+
+@app.route('/create_alert', methods=['POST'])
+def create_alert():
+    data = request.form
+    alerts.append({
+        'type': data.get('type'),             # "price" or "rsi"
+        'ticker': data.get('ticker'),
+        'target': float(data.get('target', 0)),
+        'threshold': float(data.get('threshold', 30)),
+        'direction': data.get('direction'),
+        'email': data.get('email')
+    })
+    flash(f"Alert created for {data.get('ticker')}", "success")
+    return redirect('/')
+
+start_scheduler()
+
 # Initialize Flask extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
