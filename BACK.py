@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash, make_response
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,9 +11,31 @@ import wikipedia
 from google import genai 
 import os
 import secrets
-import re
-
+import authenticator
 from alert_system.scheduler import start_scheduler, alerts
+from flask_session import Session
+
+#INITIAILIZE APP
+app = Flask(__name__, static_folder="static", template_folder="templates")
+
+# Configuration
+app.config['SECRET_KEY'] = secrets.token_hex(32)  # Change this in production!
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stockmind.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = secrets.token_hex(32)  # For API tokens
+app.config['SESSION_TYPE'] = 'filesystem' #using server side session cookies - filesystem
+
+# Initialize Flask extensions
+db = SQLAlchemy(app)
+Session(app)
+
+# Load API keys 
+GEMINI_API_KEY = "your_gemini_apikey"  # GeminiAPIKey 
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ALPHA_VANTAGE_API_KEY = "your_alpha_vantage_key"  # AlphaVantageAPIKey 
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+
 @app.route('/alert_form')
 def alert_form():
     return render_template('alert_form.html')
@@ -35,56 +57,18 @@ def create_alert():
 
 start_scheduler()
 
-# Initialize Flask extensions
-db = SQLAlchemy()
-login_manager = LoginManager()
-EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-
-# Load API keys 
-GEMINI_API_KEY = "your_gemini_apikey"  # GeminiAPIKey 
-ALPHA_VANTAGE_API_KEY = "your_alpha_vantage_apikey"  # AlphaVantageAPIKey 
-client = genai.Client(api_key=GEMINI_API_KEY)
-
-app = Flask(__name__, static_folder="static", template_folder="templates")
-
-# Configuration
-app.config['SECRET_KEY'] = secrets.token_hex(32)  # Change this in production!
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stockmind.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = secrets.token_hex(32)  # For API tokens
-
-# Initialize extensions
-db.init_app(app)
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-
-def validate_email(email):
-    return bool(EMAIL_REGEX.match(email))
-
-def validate_password(password):
-    return len(password) >= 8
-
-def validate_username(username):
-    return len(username) >= 3
-
-
 # User model
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    username = db.Column(db.String(50), nullable = False)
+    email = db.Column(db.String(120), unique=True, nullable = False)
+    password_hash = db.Column(db.String(200), nullable = False)
+    def set_passsword(self, passw):
+        self.password_hash = generate_password_hash(passw)
+    def check_password(self, passw):
+        return check_password_hash(self.password_hash, passw)
+    def get_passw_hash(self):
+        return self.password_hash
 
 # JWT token required decorator for API routes
 def token_required(f):
@@ -108,7 +92,6 @@ def token_required(f):
         
     return decorated
 
-
 def fetch_wikipedia_summary(company_name): 
     try: 
         search_results = wikipedia.search(company_name) 
@@ -129,7 +112,6 @@ def fetch_stock_price(ticker):
         return stock_prices, time_labels 
     except Exception as e: 
         return None, None
-
  
 def get_ticker_from_alpha_vantage(company_name): 
     try: 
@@ -219,158 +201,95 @@ def query_gemini_llm(description):
     except Exception as e: 
         return None 
  
-# Authentication routes
-@app.route('/login', methods=['GET', 'POST'])
+def userAuthenticate():
+    '''use inside route functions to block logged out user'''
+    if "username" in session:
+        return True
+    return False
+
+# Authentication Routes
+@app.route("/login", methods = ['POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
-
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+    email = request.form['email']
+    password = request.form['password']
+    if(not email or not password):
+        return render_template("access-account.html", error = "Invalid Information, Please try again")
+    user = User.query.filter_by(email = email).first()
+    if(user and user.check_password(password)):
+        username = user.username
+        session["username"] = username
+        return redirect(url_for("home"))
+    else:
+        return render_template("access-account.html", error = "Invalid Information")
         
-        # Basic validation
-        if not email or not password:
-            flash('Please fill in all fields', 'error')
-            return redirect(url_for('login'))
-            
-        if not validate_email(email):
-            flash('Please enter a valid email address', 'error')
-            return redirect(url_for('login'))
-            
-        user = User.query.filter_by(email=email).first()
-        
-        if user is None or not user.check_password(password):
-            flash('Invalid email or password', 'error')
-            return redirect(url_for('login'))
-            
-        login_user(user)
-        flash('Logged in successfully!', 'success')
-        next_page = request.args.get('next')
-        return redirect(next_page or url_for('home'))
-    
-    return render_template('login.html')
 
-
-@app.route('/register', methods=['GET', 'POST'])
+@app.route("/register", methods = ['POST'])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
-        
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        # Server-side validation
-        if not validate_username(username):
-            flash('Username must be at least 3 characters', 'error')
-            return redirect(url_for('register'))
-            
-        if not validate_email(email):
-            flash('Please enter a valid email address', 'error')
-            return redirect(url_for('register'))
-            
-        if not validate_password(password):
-            flash('Password must be at least 8 characters long', 'error')
-            return redirect(url_for('register'))
-            
-        if User.query.filter_by(email=email).first():
-            flash('Email already exists', 'error')
-            return redirect(url_for('register'))
-            
-        if User.query.filter_by(username=username).first():
-            flash('Username already taken', 'error')
-            return redirect(url_for('register'))
-            
-        user = User(username=username, email=email)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
+    username = request.form['username']
+    email = request.form['email']
+    password = request.form['password']
+    if(not username or not email or not password):
+        return render_template("access-account.html", error = "Invalid Information, Please try again")
+    user = User.query.filter_by(email = email).first()
+    if user:
+        return render_template("access-account.html", error="Account Already Exist")
+    else:
+        new_user = User(username = username, email = email)
+        new_user.set_passsword(password)
+        session['username'] = username
+        session['password'] = new_user.get_passw_hash()
+        session['email'] = email
+        return redirect(url_for('auth'))
     
-    return render_template('register.html')
+@app.route('/api/auth')
+def auth():
+    username = session['username']
+    email = session['email']
+    try:
+        otp =  authenticator.generateOTP(username=username, usermail=email)
+        session["otp"] = otp
+    except:
+        return render_template("access-account.html", error = "Invalid email address")
+    return render_template("access-account.html", otp = True)
 
+@app.route('/api/verify', methods = ['POST'])
+def verify():
+    inp = request.form['userOTP']
+    username = session["username"]
+    password= session["password"]
+    email = session["email"]
+    otp = session["otp"]
+    session.pop("password",None)
+    session.pop("email",None)
+    session.pop("otp",None)
+    authSuccess = authenticator.verifyOTP(otp, inp)
+    if(authSuccess):
+        newUser = User(username = username , email = email, password_hash = password)
+        #registering the user in database
+        db.session.add(newUser)
+        db.session.commit()
+        return redirect(url_for('home'))
+    else:
+        session.pop("username",None)
+        return render_template("FRONT.html", error = "❌ Invalid OTP")
+    
 @app.route('/logout')
-@login_required
 def logout():
-    logout_user()
-    flash('Logout successful!')  # Simple success message
-    return redirect(url_for('login'))
-# API Authentication routes
-@app.route('/api/auth/signup', methods=['POST'])
-def api_signup():
-    data = request.get_json()
-    
-    # Validate input
-    if not data.get('email') or not data.get('password'):
-        return jsonify({'message': 'Email and password are required'}), 400
-    
-    if not validate_email(data['email']):
-        return jsonify({'message': 'Please enter a valid email address'}), 400
-        
-    if not validate_password(data['password']):
-        return jsonify({'message': 'Password must be at least 8 characters'}), 400
-    
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({'message': 'Email already exists'}), 400
-    
-    username = data.get('fullname', data['email'].split('@')[0])
-    if User.query.filter_by(username=username).first():
-        return jsonify({'message': 'Username already taken'}), 400
-    
-    user = User(username=username, email=data['email'])
-    user.set_password(data['password'])
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    token = jwt.encode({
-        'user_id': user.id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30)
-    }, app.config['JWT_SECRET_KEY'])
-    
-    return jsonify({
-        'token': token,
-        'userId': user.id,
-        'email': user.email
-    })
-@app.route('/api/auth/login', methods=['POST'])
-def api_login():
-    data = request.get_json()
-    
-    # Validate input
-    if not data.get('email') or not data.get('password'):
-        return jsonify({'message': 'Email and password are required'}), 400
-    
-    if not validate_email(data['email']):
-        return jsonify({'message': 'Please enter a valid email address'}), 400
-    
-    user = User.query.filter_by(email=data['email']).first()
-    
-    if not user or not user.check_password(data['password']):
-        return jsonify({'message': 'Invalid credentials'}), 401
-    
-    token = jwt.encode({
-        'user_id': user.id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30)
-    }, app.config['JWT_SECRET_KEY'])
-    
-    return jsonify({
-        'token': token,
-        'userId': user.id,
-        'email': user.email
-    })
+    session.pop("username", None)
+    return redirect(url_for('home'))
+@app.route('/access-account')
+def accessAccount():
+    return render_template("access-account.html")
+
 # Protect existing routes
 @app.route("/")
 def home():
     return render_template("FRONT.html")
 
 @app.route("/analyze_company", methods=["GET"])
-@login_required
 def analyze_company():
+    if not userAuthenticate():
+        return render_template("FRONT.html", error = "Please Sign In to continue")
     company_name = request.args.get("company_name")
     if not company_name:
         return jsonify(success=False, error="No company name provided.")

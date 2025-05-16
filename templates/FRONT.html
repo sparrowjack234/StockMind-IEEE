@@ -22,29 +22,21 @@
   {% endif %}
   {% endwith %}
 
-  <div id="auth-status" style="position: absolute; top: 20px; right: 20px;">
-    {% if current_user.is_authenticated %}
-    <span>Welcome, {{ current_user.username }}!</span>
-    <a href="{{ url_for('logout') }}" style="margin-left: 10px;">Logout</a>
-    {% else %}
-    <a href="{{ url_for('login') }}">Login</a>
-    <a href="{{ url_for('register') }}" style="margin-left: 10px;">Register</a>
-    {% endif %}
-  </div>
+ 
   <header>
   <div class="top-header">
     <div class="logo">StockMind</div>
     <div class="tagline">AI-Driven Equity Analysis</div>
     <div class="auth-section">
-      {% if current_user.is_authenticated %}
-      <span class="welcome-msg">Welcome, {{ current_user.username }}</span>
-      <button class="logout-btn" onclick="window.location.href='{{ url_for('logout') }}'">
+      {% if session.get('username') %}
+      <span class="welcome-msg">Welcome, {{ session.get('username') }}</span>
+      <a class="logout-btn header-btn" href="{{url_for('logout')}}">
         Logout
-      </button>
+      </a>
       {% else %}
-      <button class="login-btn" onclick="window.location.href='{{ url_for('login') }}'">
+      <a class="login-btn header-btn" href="{{url_for('accessAccount')}}">
         Login
-      </button>
+      </a>
       {% endif %}
     </div>
   </div>
@@ -104,7 +96,11 @@
       <a href="#"><i class="fab fa-linkedin"></i></a>
     </div>
   </footer>
-
+  {% if error %}
+  <script>
+    alert("{{error}}");
+  </script>
+  {% endif %}
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const companyForm = document.getElementById('company-form');
