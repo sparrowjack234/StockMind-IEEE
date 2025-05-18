@@ -46,9 +46,15 @@ pip install -r requirements.txt
 
 * Get an Alpha Vantage API Key from [Alpha Vantage](https://www.alphavantage.co/).
 * Store it in an `.env` file or set it in your environment variables:
+* Create a .env file in the root directory with:
 
 ```bash
-ALPHA_VANTAGE_API_KEY=your_api_key
+ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
+GEMINI_API_KEY=your_gemini_key
+EMAIL_ADDRESS=your_email_for_sending_otps
+EMAIL_PASSWORD=your_email_app_password
+PORT=12001
+HOST=0.0.0.0
 ```
 
 ---
@@ -58,7 +64,7 @@ ALPHA_VANTAGE_API_KEY=your_api_key
 Run the script and input a company name:
 
 ```bash
-python stockmind.py
+python BACK.py
 ```
 
 Example Output:
