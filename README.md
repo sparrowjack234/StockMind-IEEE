@@ -45,6 +45,7 @@ pip install -r requirements.txt
 3️⃣ Set up API keys:
 
 * Get an Alpha Vantage API Key from [Alpha Vantage](https://www.alphavantage.co/).
+* Get a Gemini API Key(aistudio.google.com/app/apikey.).
 * Store it in an `.env` file or set it in your environment variables:
 * Create a .env file in the root directory with:
 
